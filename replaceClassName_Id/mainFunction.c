@@ -9,11 +9,20 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define DEBUG 1
+
+/*
+ * #ifdef DEBUG
+ * 		printf("value = %d\n", i);
+ * #endif
+ */
+
 void bubbleSortString(char targetArr[128][30], int length);
-void getAppearanceCnt(char targetArr[128][30], int targetCntArr[128], int length);
+void getUniqueClassName(char targetArr[128][30], char targetUniqueArr[128][30], int length);
+void getShortClassName(char targetArr[128][30], char targetShortArr[128][2]);
 
 int main(){
-	FILE *fp, *beginFp;
+	FILE *fp, *outputFp;
 	char s[256];
 	char *findClassStrP;
 	char *beginClassNameP;
@@ -21,9 +30,12 @@ int main(){
 	char *tok;
 
 	char className[128][30] = {"\0"};
-	int  classNameCnt[128] = {0};
+	char uniqueClassName[128][30] = {"\0"};
+	char shortClassName[128][2]  = {"\0"};
+	//int  classNameCnt[128] = {0};
 
-	int j, k, cnt = 0;
+	int k = 0;
+	int cnt = 0;
 	int strLen;
 	char tmpStr[256];
 
@@ -32,9 +44,13 @@ int main(){
 		return 0;
 	}
 
-	beginFp = fp;
+	if((outputFp = fopen("googleReplace.html", "w")) == NULL){
+		printf("new file open error\n");
+		return 0;
+	}
 
-	while(fgets(s,256, beginFp) != NULL){
+	//read all class name, including duplication
+	while(fgets(s,256, fp) != NULL){
 		findClassStrP = strstr(s, "class=");
 
 		if(findClassStrP != NULL){
@@ -56,18 +72,38 @@ int main(){
 					cnt++;
 				}
 			}
-
 		}
 	}
 
 	bubbleSortString(className, cnt);
-	getAppearanceCnt(className, classNameCnt, cnt);
+	getUniqueClassName(className, uniqueClassName, cnt);
+	getShortClassName(uniqueClassName, shortClassName);
 
-	//replace class name with short word, such as a, b, c;
+	fseek(fp, 0, SEEK_SET);
+
+	//replace class name with short name
+	while(fgets(s, 256, fp) != NULL){
+
+		findClassStrP = strstr(s, "class=");
+
+		// don't have to replace
+		if(findClassStrP == NULL){
+
+		// have to replace
+		}else{
+
+		}
+
+
+	}
+
+
+
 
 	for(k = 0; k < cnt; k++){
-		printf("cnt = %d, value = %s\n", classNameCnt[k], className[k]);
+		printf("idx = %d, value = %s\n", k, className[k]);
 	}
+
 
 	fclose(fp);
 	return 0;
@@ -88,19 +124,35 @@ void bubbleSortString(char targetArr[128][30], int length){
 	}
 }
 
-void getAppearanceCnt(char targetArr[128][30], int targetCntArr[128], int length){
+void getUniqueClassName(char targetArr[128][30], char targetUniqueArr[128][30], int length){
 	int i;
+	int compareIdx = 0;
 
-	if(length > 0){
-		targetCntArr[0] = 1;
+	if(length < 1){
+		return;
 	}
 
-	for(i = 1; i < length; i++){
-		if(strcmp(targetArr[i - 1], targetArr[i]) == 0){
-			targetCntArr[i] = targetCntArr[i - 1] + 1;
+	strcpy(targetUniqueArr[0], targetArr[0]);
 
-		}else{
-			targetCntArr[i] = 1;
+	for(i = 1; i < length; i++){
+		if(strcmp(targetUniqueArr[compareIdx], targetArr[i]) != 0){
+			compareIdx++;
+			strcpy(targetUniqueArr[compareIdx], targetArr[i]);
 		}
 	}
 }
+
+void getShortClassName(char targetArr[128][30], char targetShortArr[128][2]){
+	int i = 0;
+	char tmp[3];
+
+	while(strcmp(targetArr[i], "\0") != 0){
+		sprintf(tmp, "%c%d", 'a' + i / 10, i % 10);
+
+		printf("i = %d, tmp = %s\n", i, tmp);
+		strcmp(targetShortArr[i], tmp);
+		i++;
+	}
+}
+
+
