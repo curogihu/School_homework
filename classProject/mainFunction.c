@@ -20,8 +20,10 @@ typedef struct{
 
 FILE *sortDataByCnt(FILE *inFp);
 int getRecordCntFromFile(FILE *targetFp);
-int comp( const void *c1, const void *c2);
 void closePointers(FILE *fp1, FILE *fp2);
+void getRecordFromFile(FILE *targetInFp, NameData *targetNd);
+int comp( const void *c1, const void *c2);
+void outputRecordToFile(FILE *targetOutFp, NameData *targetNd);
 
 int main(){
 	FILE *inFp, *outFp;
@@ -38,13 +40,10 @@ int main(){
  * When executing this function, input file pointer is closed regardless of consequence.
  *
  * If an error occurs, return NULL.
- * If no error occurs, return output File pointer.
+ * If NO error occurs, return output File pointer.
  */
 FILE *sortDataByCnt(FILE *inFp){
 	FILE *outFp;
-	char tmpIn[255] = {"\0"};
-	char tmpOut[255] = {"\0"};
-	char tmpClassName[255] = {"\0"};
 	int i;
 	int dataCnt;
 
@@ -74,13 +73,7 @@ FILE *sortDataByCnt(FILE *inFp){
 	NameData nameInfo[dataCnt];
 
 	for(i = 0; i< dataCnt; i++){
-		fgets(tmpIn, sizeof(tmpIn) , inFp);
-		sprintf(tmpClassName, "%s", strtok(tmpIn, " "));
-
-		nameInfo[i].name = (char *) malloc(sizeof(char) * strlen(tmpClassName) + 1);
-		strcpy(nameInfo[i].name, tmpClassName);
-
-		nameInfo[i].cnt = atoi(strtok(NULL, " "));
+		getRecordFromFile(inFp, &nameInfo[i]);
 	}
 
 #ifdef DEBUG
@@ -94,8 +87,7 @@ FILE *sortDataByCnt(FILE *inFp){
 #endif
 
 	for(i = 0; i< dataCnt; i++){
-		sprintf(tmpOut, "%s %d\n", nameInfo[i].name, nameInfo[i].cnt);
-		fputs(tmpOut, outFp);
+		outputRecordToFile(outFp, &nameInfo[i]);
 	}
 
 #ifdef DEBUG
@@ -106,7 +98,6 @@ FILE *sortDataByCnt(FILE *inFp){
 		free(nameInfo[i].name);
 	}
 
-	//closePointers(inFp, outFp);
 	fseek(outFp, 0, SEEK_SET);
 
 #ifdef DEBUG
@@ -128,6 +119,23 @@ int getRecordCntFromFile(FILE *targetFp){
 	return cnt;
 }
 
+void closePointers(FILE *fp1, FILE *fp2){
+	fclose(fp1);
+	fclose(fp2);
+}
+
+void getRecordFromFile(FILE *targetInFp, NameData *targetNd){
+	char tmpIn[255] = {"\0"};
+	char tmpClassName[255] = {"\0"};
+
+	fgets(tmpIn, sizeof(tmpIn) , targetInFp);
+	sprintf(tmpClassName, "%s", strtok(tmpIn, " "));
+
+	targetNd->name = (char *) malloc(sizeof(char) * strlen(tmpClassName) + 1);
+	strcpy(targetNd->name, tmpClassName);
+	targetNd->cnt = atoi(strtok(NULL, " "));
+}
+
 //Order by cnt desc, name asc
 int comp(const void *c1, const void *c2){
 	NameData test1 = *(NameData *)c1;
@@ -141,7 +149,9 @@ int comp(const void *c1, const void *c2){
 	}
 }
 
-void closePointers(FILE *fp1, FILE *fp2){
-	fclose(fp1);
-	fclose(fp2);
+void outputRecordToFile(FILE *targetOutFp, NameData *targetNd){
+	char tmpOut[255] = {"\0"};
+
+	sprintf(tmpOut, "%s %d\n", targetNd->name, targetNd->cnt);
+	fputs(tmpOut, targetOutFp);
 }
