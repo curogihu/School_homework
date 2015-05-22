@@ -1,10 +1,3 @@
-/*
- * mainFunction.c
- *
- *  Created on: 2015/05/13
- *      Author: hikozuma
- */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -21,19 +14,25 @@ typedef struct{
 FILE *sortDataByCnt(FILE *inFp);
 int getRecordCntFromFile(FILE *targetFp);
 void closePointers(FILE *fp1, FILE *fp2);
-void getRecordFromFile(FILE *targetInFp, NameData *targetNd);
+void getRecordFromFile(FILE *targetInFp, NameData *targetNd, int recordCnt);
 int comp( const void *c1, const void *c2);
-void outputRecordToFile(FILE *targetOutFp, NameData *targetNd);
+void outputRecordToFile(FILE *targetOutFp, NameData *targetNd, int recordCnt);
+void freeStruct(NameData *targetNd, int recordCnt);
 
 int main(){
 	FILE *inFp, *outFp;
 
-	inFp = fopen(INPUTFILE, "r");
-
-	if((outFp = sortDataByCnt(inFp)) == NULL){
-		printf("Error, program couldn't sort data");
+	if((inFp = fopen(INPUTFILE, "r")) == NULL){
+		printf("Error, program couldn't read input file.\n");
+		return -1;
 	}
 
+	if((outFp = sortDataByCnt(inFp)) == NULL){
+		printf("Error, program couldn't sort data.\n");
+		return -1;
+	}
+
+	return 0;
 }
 
 /*
@@ -44,17 +43,13 @@ int main(){
  */
 FILE *sortDataByCnt(FILE *inFp){
 	FILE *outFp;
-	int i;
 	int dataCnt;
+	NameData *nameInfo;
 
 	if((outFp = fopen(OUTPUTFILE, "w")) == NULL){
 		printf("Output file open error\n");
 		return NULL;
 	}
-
-#ifdef DEBUG
-	printf("Success, two files are opened.\n");
-#endif
 
 	dataCnt = getRecordCntFromFile(inFp);
 
@@ -64,45 +59,20 @@ FILE *sortDataByCnt(FILE *inFp){
 		return NULL;
 	}
 
-#ifdef DEBUG
-	printf("Success, get records count.\n");
-#endif
-
 	fseek(inFp, 0, SEEK_SET);
 
-	NameData nameInfo[dataCnt];
+	nameInfo = (NameData *) malloc(sizeof(NameData) * dataCnt);
 
-	for(i = 0; i< dataCnt; i++){
-		getRecordFromFile(inFp, &nameInfo[i]);
+	if(nameInfo == NULL){
+		printf("can't allocate the memory.");
+		return NULL;
 	}
 
-#ifdef DEBUG
-	printf("Success, get datas from input file.\n");
-#endif
+	getRecordFromFile(inFp, nameInfo, dataCnt);
+	qsort(nameInfo, dataCnt, sizeof(NameData), comp);
 
-	qsort( nameInfo, dataCnt, sizeof(NameData), comp);
-
-#ifdef DEBUG
-	printf("Success, do quick sort.\n");
-#endif
-
-	for(i = 0; i< dataCnt; i++){
-		outputRecordToFile(outFp, &nameInfo[i]);
-	}
-
-#ifdef DEBUG
-	printf("Success, write the sorted data to output file.\n");
-#endif
-
-	for(i = 0; i < dataCnt; i++){
-		free(nameInfo[i].name);
-	}
-
-	fseek(outFp, 0, SEEK_SET);
-
-#ifdef DEBUG
-	printf("Success, close input and output file pointers.\n");
-#endif
+	outputRecordToFile(outFp, nameInfo, dataCnt);
+	freeStruct(nameInfo, dataCnt);
 
 	return outFp;
 }
@@ -124,16 +94,20 @@ void closePointers(FILE *fp1, FILE *fp2){
 	fclose(fp2);
 }
 
-void getRecordFromFile(FILE *targetInFp, NameData *targetNd){
+void getRecordFromFile(FILE *targetInFp, NameData *targetNd, int recordCnt){
 	char tmpIn[255] = {"\0"};
 	char tmpClassName[255] = {"\0"};
+	int i;
 
-	fgets(tmpIn, sizeof(tmpIn) , targetInFp);
-	sprintf(tmpClassName, "%s", strtok(tmpIn, " "));
+	for(i = 0; i < recordCnt; i++){
 
-	targetNd->name = (char *) malloc(sizeof(char) * strlen(tmpClassName) + 1);
-	strcpy(targetNd->name, tmpClassName);
-	targetNd->cnt = atoi(strtok(NULL, " "));
+		fgets(tmpIn, sizeof(tmpIn) , targetInFp);
+		sprintf(tmpClassName, "%s", strtok(tmpIn, " "));
+
+		targetNd[i].name = (char *) malloc(sizeof(char) * strlen(tmpClassName) + 1);
+		strcpy(targetNd[i].name, tmpClassName);
+		targetNd[i].cnt = atoi(strtok(NULL, " "));
+	}
 }
 
 //Order by cnt desc, name asc
@@ -149,9 +123,20 @@ int comp(const void *c1, const void *c2){
 	}
 }
 
-void outputRecordToFile(FILE *targetOutFp, NameData *targetNd){
-	char tmpOut[255] = {"\0"};
+void outputRecordToFile(FILE *targetOutFp, NameData *targetNd, int recordCnt){
+	int i;
 
-	sprintf(tmpOut, "%s %d\n", targetNd->name, targetNd->cnt);
-	fputs(tmpOut, targetOutFp);
+	for(i = 0; i < recordCnt; i++){
+		fprintf(targetOutFp, "%s %d\n", targetNd[i].name, targetNd[i].cnt);
+	}
+}
+
+void freeStruct(NameData *targetNd, int recordCnt){
+	int i;
+
+	for(i = 0; i < recordCnt; i++){
+		free(targetNd[i].name);
+	}
+
+	free(targetNd);
 }
