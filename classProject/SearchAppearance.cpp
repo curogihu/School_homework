@@ -10,6 +10,7 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
+#include <iomanip>
 
 using namespace std;
 
@@ -20,6 +21,7 @@ public:
 	int maxWordLen;
 	string wordList[50000];
 	int cntList[26][50];
+	double percentageList[26][50];
 
 	CountingWord();
 	void importWordList(ifstream targetIfs);
@@ -93,37 +95,58 @@ int main() {
 		}
 	}
 
+	for(i = 0; i < 26; i++){
+		for(j = 0; j < cw.maxWordLen; j++){
+			cw.percentageList[i][j] = (double)cw.cntList[i][j] / cw.wordCnt * 100;
+		}
+	}
+
 	alphabet = 'a';
 
 	ofs << "wordCnt = " << cw.wordCnt << endl << endl;
 
 	// output result to file
 	for(i = 0; i < 26; i++){
+		double minPercentage = 100;
+		double maxPercentage = 0;
+
 		for(j = 0; j < cw.maxWordLen; j++){
 
-			if(cw.cntList[i][j] > 0){
+			if(cw.percentageList[i][j] < minPercentage){
+				minPercentage = cw.percentageList[i][j];
+			}
 
+			if(cw.percentageList[i][j] > maxPercentage){
+				maxPercentage = cw.percentageList[i][j];
+			}
+
+			if(cw.cntList[i][j] > 0){
 				if((j + 1 == 1) || (j + 1 > 20 && (j + 1) % 10 == 1)){
 					ofs << "char = " << alphabet << ", " <<
 							j + 1 << "st, cnt = " << cw.cntList[i][j] <<
-							", rate = " << (int)((double)cw.cntList[i][j] / cw.wordCnt * 100) << "%" << endl;
+							", rate = " << fixed << setprecision(2) << cw.percentageList[i][j] << "%" << endl;
 
 				}else if((j + 1 == 2) || (j + 1 > 20 && (j + 1) % 10 == 2)){
 					ofs << "char = " << alphabet << ", " <<
 							j + 1 << "nd, cnt = " << cw.cntList[i][j] <<
-							", rate = " << (int)((double)cw.cntList[i][j] / cw.wordCnt * 100) << "%" << endl;
+							", rate = " << fixed << setprecision(2) << cw.percentageList[i][j] << "%" << endl;
 
 				}else if((j + 1 == 3) || (j + 1 > 20 && (j + 1) % 10 == 3)){
 					ofs << "char = " << alphabet << ", " <<
 							j + 1 << "rd, cnt = " << cw.cntList[i][j] <<
-							", rate = " << (int)((double)cw.cntList[i][j] / cw.wordCnt * 100) << "%" << endl;
+							", rate = " << fixed << setprecision(2) << cw.percentageList[i][j] << "%" << endl;
 				}else{
 					ofs << "char = " << alphabet << ", " <<
 							j + 1 << "th, cnt = " << cw.cntList[i][j] <<
-							", rate = " << (int)((double)cw.cntList[i][j] / cw.wordCnt * 100) << "%" << endl;
+							", rate = " << fixed << setprecision(2) << cw.percentageList[i][j] << "%" << endl;
 				}
 			}
+
 		}
+
+		ofs << endl << "Max percentage is " << maxPercentage << "% "<< endl;
+		ofs << "Min percentage is " << minPercentage << "%" << endl;
+		ofs << "------------------------------------" << endl << endl;
 
 		alphabet++;
 	}
